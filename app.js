@@ -9,10 +9,11 @@ const productsDOM = document.querySelector('.products-center');
 const cartTotal = document.querySelector('.cart-total');
 const cartItems = document.querySelector('.cart-items');
 const cartContent = document.querySelector('.cart-content');
+const clearCart = document.querySelector('.clear-cart');
 //1. get products
 
 let cart = [];
-
+let buttonsDOM = [];
 class Products {
   // get from api and point
   getProducts() {
@@ -35,7 +36,6 @@ class UI {
         <p class="product-title">${item.title}</p>
       </div>
       <button class="btn add-to-cart " data-id=${item.id}>
-        <i class="fas fa-shopping-cart"></i>
         add to cart
       </button>
     </div>`;
@@ -45,10 +45,11 @@ class UI {
 
   getAddToCartBtns() {
     const addToCartBrtn = [...document.querySelectorAll('.add-to-cart')];
+    buttonsDOM = addToCartBrtn;
     addToCartBrtn.forEach((btn) => {
       const id = btn.dataset.id;
       // check if this product id is in cart or not
-      const isInCart = cart.find((p) => p.id === id);
+      const isInCart = cart.find((p) => p.id === parseInt(id));
       if (isInCart) {
         btn.innerText = 'in Cart';
         btn.disabled = true;
@@ -81,7 +82,6 @@ class UI {
     }, 0);
     cartTotal.innerText = `total price : ${totalPrice.toFixed(2)} $`;
     cartItems.innerText = tempCartItems;
-    console.log(tempCartItems);
   }
   addCartItem(cartItem) {
     const div = document.createElement('div');
@@ -92,19 +92,54 @@ class UI {
       <h5>$ ${cartItem.price}</h5>
     </div>
     <div class="cart-item-conteoller">
-      <i class="fas fa-chevron-up"></i>
+      <i class="fas fa-chevron-up" data-id=${cartItem.id}></i>
       <p>${cartItem.quantity}</p>
-      <i class="fas fa-chevron-down"></i>
+      <i class="fas fa-chevron-down" data-id=${cartItem.id}></i>
       </div>
-      <i class="far fa-trash-alt"></i>`;
+      <i class="far fa-trash-alt" data-id=${cartItem.id}></i>`;
     cartContent.appendChild(div);
   }
   setUpApp() {
     //get cart from storage
-    cart = Storage.getCart() || [];
+    cart = Storage.getCart();
     // add cart item
     cart.forEach((cartItem) => this.addCartItem(cartItem));
     this.setCartValue(cart);
+  }
+  cartLogic() {
+    // clear cart
+    clearCart.addEventListener('click', () => {
+      this.clearCart();
+    });
+  }
+  clearCart() {
+    // remove :(DRY)
+    console.log('clear');
+    cart.forEach((cItem) => this.removeItem(cItem.id));
+    while (cartContent.children.length) {
+      cartContent.removeChild(cartContent.children[0]);
+    }
+    closeModalFunction();
+  }
+  removeItem(id) {
+    // update cart
+    console.log(id);
+    cart = cart.filter((cItem) => cItem.id !== id);
+    // total price and cart items
+    this.setCartValue(cart);
+    console.log(cart);
+    console.log(this.setCartValue(cart));
+    // update storage
+    Storage.saveCart(cart);
+    //get add to cart btns => update text and disable
+    this.getSingleButton(id);
+  }
+  getSingleButton(id) {
+    const button = buttonsDOM.find(
+      (btn) => parseInt(btn.dataset.id) === parseInt(id)
+    );
+    button.innerText = 'add to cart';
+    button.disabled = false;
   }
 }
 
@@ -121,7 +156,7 @@ class Storage {
     localStorage.setItem('cart', JSON.stringify(cart));
   }
   static getCart() {
-    return JSON.parse(localStorage.getItem('cart'));
+    return JSON.parse(localStorage.getItem('cart')) && [];
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -132,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ui.setUpApp();
   ui.displayProducts(productsData);
   ui.getAddToCartBtns();
+  ui.cartLogic();
   Storage.saveProducts(productsData);
 });
 
