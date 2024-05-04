@@ -13,6 +13,7 @@ const clearCart = document.querySelector('.clear-cart');
 //1. get products
 
 let cart = [];
+
 let buttonsDOM = [];
 class Products {
   // get from api and point
@@ -103,13 +104,55 @@ class UI {
     //get cart from storage
     cart = Storage.getCart();
     // add cart item
-    cart.forEach((cartItem) => this.addCartItem(cartItem));
     this.setCartValue(cart);
+    // cart.forEach((cartItem) => this.addCartItem(cartItem));
   }
   cartLogic() {
     // clear cart
     clearCart.addEventListener('click', () => {
       this.clearCart();
+    });
+
+    // cart functionality
+    cartContent.addEventListener('click', (e) => {
+      // console.log([...e.target.classList][1]);
+      if (e.target.classList.contains('fa-chevron-up')) {
+        console.log(e.target.dataset.id);
+        const addQuatity = e.target;
+        // 1. get item from cart
+        const addedItem = cart.find(
+          (cItem) => cItem.id == addQuatity.dataset.id
+        );
+        // 2. save cart
+        addedItem.quantity++;
+        this.setCartValue(cart);
+        // 3. update cart value
+        Storage.saveCart(cart);
+        // 4. update cart in UI
+        addQuatity.nextElementSibling.innerText = addedItem.quantity;
+      } else if (e.target.classList.contains('fa-trash-alt')) {
+        const removeItem = e.target;
+        const _removedItem = cart.find((c) => c.id == removeItem.dataset.id);
+        this.removeItem(_removedItem.id);
+        Storage.saveCart(cart);
+        cartContent.removeChild(removeItem.parentElement);
+        //remove from cartItem
+        // remove
+      } else if (e.target.classList.contains('fa-chevron-down')) {
+        const subQuantity = e.target;
+        const subStractedItem = cart.find(
+          (c) => c.id == subQuantity.dataset.id
+        );
+        if (subStractedItem.quantity === 1) {
+          this.removeItem(subStractedItem.id);
+          cartContent.removeChild(subQuantity.parentElement.parentElement);
+          return;
+        }
+        subStractedItem.quantity--;
+        this.setCartValue(cart);
+        Storage.saveCart(cart);
+        subQuantity.previousElementSibling.innerText = subStractedItem.quantity;
+      }
     });
   }
   clearCart() {
